@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drive Uploader — Sube archivos a Google Drive</title>
+  <meta name="description" content="Sube varios archivos a una carpeta de Google Drive de un solo jalón.">
+
+  <!-- Bootstrap 5.3 (framework CSS para el diseño responsivo) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Tipografías -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+  <!-- ============ ENCABEZADO ============ -->
+  <header class="app-header">
+    <div class="container">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M12 4h8l8 14-4 7h-8l4-7-8-14Z" fill="currentColor" opacity=".55"/>
+            <path d="M12 4 4 18l4 7 8-14-4-7Z" fill="currentColor"/>
+            <path d="M8 25h16l4-7H12l-4 7Z" fill="currentColor" opacity=".8"/>
+          </svg>
+          <div>
+            <h1 class="brand-name">Drive Uploader</h1>
+            <p class="brand-tagline">Varios archivos, una carpeta, un solo envío</p>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+          <span id="estadoConexion" class="estado estado--off">
+            <span class="estado-punto"></span>Sin conectar
+          </span>
+          <button id="btnConectar" type="button" class="btn btn-conectar">
+            Conectar con Google
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container app-main">
+
+    <!-- Aviso de configuración / errores -->
+    <div id="avisoGlobal" class="alert alert-aviso d-none" role="alert"></div>
+
+    <div class="row g-4">
+
+      <!-- ============ PASO 1: CARPETA DESTINO ============ -->
+      <div class="col-12 col-lg-5">
+        <section class="panel h-100" aria-labelledby="tituloDestino">
+          <p class="paso-etiqueta">Paso 1</p>
+          <h2 id="tituloDestino" class="panel-titulo">Elige el destino</h2>
+          <p class="panel-ayuda">
+            Escribe el nombre de la carpeta y se busca en tu Drive. Si no existe, se crea.
+          </p>
+
+          <div class="btn-group modo-grupo w-100 mb-3" role="group" aria-label="Modo de destino">
+            <input type="radio" class="btn-check" name="modoDestino" id="modoNombre" value="nombre" checked>
+            <label class="btn btn-modo" for="modoNombre">Por nombre</label>
+
+            <input type="radio" class="btn-check" name="modoDestino" id="modoId" value="id">
+            <label class="btn btn-modo" for="modoId">Por ID</label>
+          </div>
+
+          <div id="campoNombre">
+            <label for="carpetaNombre" class="form-label">Nombre de la carpeta</label>
+            <input type="text" class="form-control campo" id="carpetaNombre"
+                   placeholder="Political Science" autocomplete="off">
+          </div>
+
+          <div id="campoId" class="d-none">
+            <label for="carpetaId" class="form-label">ID de la carpeta</label>
+            <input type="text" class="form-control campo campo--mono" id="carpetaId"
+                   placeholder="1a2B3cD4eF5gH6iJ7kL8" autocomplete="off">
+            <p class="pista">
+              Abre la carpeta en Drive y copia el código que aparece al final de la dirección.
+            </p>
+          </div>
+
+          <div id="resumenDestino" class="destino-resumen d-none">
+            <span class="destino-etiqueta">Destino confirmado</span>
+            <span id="destinoTexto" class="destino-valor"></span>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============ PASO 2: ARCHIVOS ============ -->
+      <div class="col-12 col-lg-7">
+        <section class="panel h-100" aria-labelledby="tituloArchivos">
+          <p class="paso-etiqueta">Paso 2</p>
+          <h2 id="tituloArchivos" class="panel-titulo">Suelta tus archivos</h2>
+
+          <!-- Zona de arrastre: elemento central de la interfaz -->
+          <div id="zonaSoltar" class="zona-soltar" tabindex="0" role="button"
+               aria-label="Arrastra archivos aquí o presiona Enter para seleccionarlos">
+            <div class="zona-marco"></div>
+            <svg class="zona-icono" viewBox="0 0 48 48" aria-hidden="true">
+              <path d="M24 32V14m0 0-7 7m7-7 7 7" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M8 30v4a4 4 0 0 0 4 4h24a4 4 0 0 0 4-4v-4" stroke="currentColor"
+                    stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            </svg>
+            <p class="zona-texto">Arrastra tus archivos aquí</p>
+            <p class="zona-texto-sec">o haz clic para buscarlos en tu equipo</p>
+            <input type="file" id="selectorArchivos" multiple hidden>
+          </div>
+
+          <!-- Lista de archivos en cola -->
+          <div class="cola-cabecera">
+            <span id="contadorArchivos" class="contador">Nada en la cola</span>
+            <button id="btnLimpiar" type="button" class="btn btn-limpiar" disabled>Vaciar cola</button>
+          </div>
+
+          <ul id="listaArchivos" class="lista-archivos">
+            <li class="lista-vacia">Los archivos que elijas aparecerán aquí antes de enviarse.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============ PASO 3: ENVÍO ============ -->
+    <section class="panel panel--envio mt-4" aria-labelledby="tituloEnvio">
+      <p class="paso-etiqueta">Paso 3</p>
+      <h2 id="tituloEnvio" class="panel-titulo">Envía todo de una vez</h2>
+
+      <div class="progress progreso" role="progressbar" aria-label="Progreso total del envío"
+           aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+        <div id="barraTotal" class="progress-bar" style="width: 0%"></div>
+      </div>
+
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-3">
+        <p id="mensajeEstado" class="mensaje-estado">Listo cuando tú lo estés.</p>
+        <button id="btnSubir" type="button" class="btn btn-subir" disabled>
+          Subir a Drive
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ CONTENIDO DE LA CARPETA (datos que devuelve Drive) ============ -->
+    <section class="panel panel--contenido mt-4" aria-labelledby="tituloContenido">
+      <div class="contenido-cabecera">
+        <div>
+          <h2 id="tituloContenido" class="panel-titulo">Lo que ya hay en la carpeta</h2>
+          <p id="contenidoResumen" class="panel-ayuda mb-0">
+            Conecta tu cuenta y elige un destino para ver su contenido.
+          </p>
+        </div>
+        <button id="btnRefrescar" type="button" class="btn btn-refrescar" disabled>
+          <svg class="icono-refrescar" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          Actualizar
+        </button>
+      </div>
+
+      <!-- La tabla se llena desde JavaScript con la respuesta de la API -->
+      <div class="tabla-envoltorio">
+        <table class="table tabla-contenido align-middle mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Nombre</th>
+              <th scope="col">Tipo</th>
+              <th scope="col" class="celda-num">Tamaño</th>
+              <th scope="col">Última modificación</th>
+              <th scope="col"><span class="visually-hidden">Abrir en Drive</span></th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoContenido"></tbody>
+        </table>
+      </div>
+
+      <p id="contenidoVacio" class="contenido-vacio">
+        Aquí aparecerán los archivos que Drive reporte en la carpeta destino.
+      </p>
+    </section>
+
+    <footer class="app-footer">
+      <p>
+        Los archivos viajan directo de tu navegador a Google Drive mediante la API de Drive v3.
+        Esta página no guarda copias ni los envía a ningún otro servidor.
+      </p>
+    </footer>
+  </main>
+
+  <!-- Bootstrap JS (componentes interactivos del framework) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Google Identity Services: autorización OAuth 2.0 -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Lógica de la aplicación -->
+  <script src="app.js"></script>
+</body>
+</html>
