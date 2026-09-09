@@ -1,11 +1,10 @@
 /* =========================================================
-   Drive Uploader — estilos propios
-   Complementan a Bootstrap 5.3; no lo sustituyen.
+   Drive Uploader
    Paleta heredada de la versión de escritorio de la app.
    ========================================================= */
 
 :root {
-  --tinta:        #0B0A1C;  /* fondo general, índigo casi negro */
+  --tinta:        #0B0A1C;  /* fondo general */
   --superficie:   #141232;  /* paneles */
   --superficie-2: #1B1846;  /* campos y elementos elevados */
   --borde:        #2A2660;
@@ -322,11 +321,17 @@ h1, h2 { font-family: "Space Grotesk", "Inter", sans-serif; }
   background: rgba(74, 140, 255, .18);
   transition: width .25s ease;
   pointer-events: none;
+  z-index: 0;
 }
 
-.fila > * { position: relative; z-index: 1; }
+/* Solo el contenido va sobre la barra. Antes esta regla usaba .fila > *,
+   que también alcanzaba a .fila-avance y le quitaba el posicionamiento
+   absoluto: al llegar al 100% la barra ocupaba la fila entera. */
+.fila-datos,
+.fila-marca,
+.fila-quitar { position: relative; z-index: 1; }
 
-.fila-datos { flex: 1; min-width: 0; }
+.fila-datos { flex: 1; min-width: 0; overflow: hidden; }
 
 .fila-nombre {
   font-size: .87rem;
@@ -340,9 +345,10 @@ h1, h2 { font-family: "Space Grotesk", "Inter", sans-serif; }
   font-family: "JetBrains Mono", monospace;
   font-size: .72rem;
   color: var(--texto-suave);
+  white-space: nowrap;
 }
 
-.fila-marca { font-size: .72rem; font-weight: 600; white-space: nowrap; }
+.fila-marca { font-size: .72rem; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
 .fila-marca--espera   { color: var(--texto-suave); }
 .fila-marca--subiendo { color: var(--azul); }
 .fila-marca--listo    { color: var(--exito); }
